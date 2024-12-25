@@ -38,16 +38,18 @@ class LlavaJambaForCausalLM(paddlenlp.transformers.jamba.modeling.
     def get_model(self):
         return self.jamba
 
-    def forward(self, input_ids: paddle.Tensor=None, attention_mask:
-        Optional[paddle.Tensor]=None, position_ids: Optional[paddle.Tensor]
-        =None, past_key_values: Optional[List[paddle.Tensor]]=None,
-        inputs_embeds: Optional[paddle.Tensor]=None, labels: Optional[
-        paddle.Tensor]=None, use_cache: Optional[bool]=None,
-        output_attentions: Optional[bool]=None, output_hidden_states:
-        Optional[bool]=None, images: Optional[paddle.Tensor]=None,
-        image_sizes: Optional[List[List[int]]]=None, return_dict: Optional[
-        bool]=None, **kwargs) ->Union[Tuple, paddlenlp.transformers.
-        model_outputs.CausalLMOutputWithPast]:
+    def forward(self,
+                input_ids: paddle.Tensor=None,
+                attention_mask: Optional[paddle.Tensor]=None,
+                position_ids: Optional[paddle.Tensor]=None,
+                past_key_values: Optional[List[paddle.Tensor]]=None,
+                inputs_embeds: Optional[paddle.Tensor]=None, labels: Optional[paddle.Tensor]=None,
+                use_cache: Optional[bool]=None,
+                output_attentions: Optional[bool]=None,
+                output_hidden_states: Optional[bool]=None,
+                images: Optional[paddle.Tensor]=None,
+                image_sizes: Optional[List[List[int]]]=None,
+                return_dict: Optional[bool]=None, **kwargs) ->Union[Tuple, paddlenlp.transformers.model_outputs.CausalLMOutputWithPast]:
         if inputs_embeds is None:
             (input_ids, position_ids, attention_mask, past_key_values,
                 inputs_embeds, labels) = (self.
@@ -62,9 +64,11 @@ class LlavaJambaForCausalLM(paddlenlp.transformers.jamba.modeling.
             return_dict, **kwargs)
 
     @paddle.no_grad()
-    def generate(self, inputs: Optional[paddle.Tensor]=None, images:
-        Optional[paddle.Tensor]=None, image_sizes: Optional[paddle.Tensor]=
-        None, **kwargs):
+    def generate(self,
+                 inputs: Optional[paddle.Tensor]=None,
+                 images: Optional[paddle.Tensor]=None,
+                 image_sizes: Optional[paddle.Tensor]=None,
+                 **kwargs):
         position_ids = kwargs.pop('position_ids', None)
         attention_mask = kwargs.pop('attention_mask', None)
         if 'inputs_embeds' in kwargs:
@@ -80,8 +84,11 @@ class LlavaJambaForCausalLM(paddlenlp.transformers.jamba.modeling.
         return super().generate(position_ids=position_ids, attention_mask=
             attention_mask, inputs_embeds=inputs_embeds, **kwargs)
 
-    def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
-        inputs_embeds=None, **kwargs):
+    def prepare_inputs_for_generation(self,
+                                      input_ids,
+                                      past_key_values=None,
+                                      inputs_embeds=None,
+                                      **kwargs):
         images = kwargs.pop('images', None)
         image_sizes = kwargs.pop('image_sizes', None)
         inputs = super().prepare_inputs_for_generation(input_ids,
