@@ -27,8 +27,7 @@ class Chatbot:
 
     def init_components(self):
         d = self.config.model_dir
-        model = LlavaJambaForCausalLM.from_pretrained(d, dtype=paddle.bfloat16
-            ).eval()
+        model = LlavaJambaForCausalLM.from_pretrained(d, dtype=paddle.bfloat16)
         tokenizer = JambaTokenizer.from_pretrained(d)
         image_processor = SigLipImageProcessor()
         self.model = model
@@ -39,8 +38,7 @@ class Chatbot:
         self.jamba_conv_templates = conv_templates
         eos_token_id = tokenizer.eos_token_id
         self.gen_kwargs['eos_token_id'] = eos_token_id
-        self.gen_kwargs['pad_token_id'
-            ] = tokenizer.pad_token_id if tokenizer.pad_token_id else eos_token_id
+        self.gen_kwargs['pad_token_id'] = tokenizer.pad_token_id if tokenizer.pad_token_id else eos_token_id
         print(f'setting eos_token_id to {eos_token_id}')
         model.eval()
         self.tokenizer = tokenizer
@@ -56,19 +54,16 @@ class Chatbot:
             input_ids for chunk in prompt.split('<image>')]
 
         def insert_separator(X, sep):
-            return [ele for sublist in zip(X, [sep] * len(X)) for ele in
-                sublist][:-1]
+            return [ele for sublist in zip(X, [sep] * len(X)) for ele in sublist][:-1]
         input_ids = []
         offset = 0
-        if len(prompt_chunks) > 0 and len(prompt_chunks[0]
-            ) > 0 and prompt_chunks[0][0] == self.tokenizer.bos_token_id:
+        if len(prompt_chunks) > 0 and len(prompt_chunks[0]) > 0 and prompt_chunks[0][0] == self.tokenizer.bos_token_id:
             offset = 1
             input_ids.append(prompt_chunks[0][0])
-        for x in insert_separator(prompt_chunks, [image_token_index] * (
-            offset + 1)):
+        for x in insert_separator(prompt_chunks, [image_token_index] * (offset + 1)):
             input_ids.extend(x[offset:])
         if return_tensors is not None:
-            if return_tensors == 'pt':
+            if return_tensors == 'pd':
                 return paddle.Tensor(input_ids, dtype=paddle.long)
             raise ValueError(f'Unsupported tensor type: {return_tensors}')
         return input_ids
@@ -90,8 +85,7 @@ class Chatbot:
         processor = self.processor
         for fp in images:
             if fp is None:
-                list_image_tensors.append(paddle.zeros(3, crop_size[
-                    'height'], crop_size['width']).to(self.device))
+                list_image_tensors.append(paddle.zeros(3, crop_size['height'], crop_size['width']).to(self.device))
                 continue
             elif isinstance(fp, str):
                 image = Image.open(fp).convert('RGB')
@@ -115,18 +109,14 @@ class Chatbot:
                             background_color)
                         result.paste(pil_img, ((height - width) // 2, 0))
                         return result
-                image = expand2square(image, tuple(int(x * 255) for x in
-                    processor.image_mean))
-                image = processor.preprocess(image, return_tensors='pt')[
-                    'pixel_values'][0]
+                image = expand2square(image, tuple(int(x * 255) for x in processor.image_mean))
+                image = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
             else:
-                image = processor.preprocess(image, return_tensors='pt')[
-                    'pixel_values'][0]
+                image = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
             list_image_tensors.append(image.to(self.device))
         return list_image_tensors
 
-    def chat_with_jamba(self, text: str, media=None, isVideo=False, t=1.0,
-        frameNum=128, patchside_length=336, patchStrategy='norm'):
+    def chat_with_jamba(self, text: str, media=None, isVideo=False, t=1.0, frameNum=128, patchside_length=336, patchStrategy='norm'):
 
         def extract_frames(video, t=1.0, frameNum=128):
             try:
@@ -178,8 +168,7 @@ class Chatbot:
             return True
 
         def is_video_file(path):
-            video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.webm'
-                ]
+            video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.webm']
             return any(path.lower().endswith(ext) for ext in video_extensions)
 
         def insert_image_placeholder_for_video(t, num_images, placeholder=
@@ -196,9 +185,7 @@ class Chatbot:
             side_length = patchside_length
             placeholder_count = text.count('<image>')
             if placeholder_count != len(images):
-                raise ValueError(
-                    'The number of <image> placeholders does not match the number of images.'
-                    )
+                raise ValueError("The number of <image> placeholders does not match the number of images.")
             new_image_paths = []
             os.makedirs(output_dir, exist_ok=True)
             for idx, image_path in enumerate(images):
@@ -254,9 +241,7 @@ class Chatbot:
             if final_placeholder_count != len(new_image_paths):
                 print(new_image_paths)
                 print(placeholder_count)
-                raise ValueError(
-                    'The number of processed <image> placeholders does not match the number of split images.'
-                    )
+                raise ValueError("The number of processed <image> placeholders does not match the number of split images.")
             return text, new_image_paths
         if text == '':
             return 'Please type in something'
@@ -285,10 +270,7 @@ class Chatbot:
                     print('The provided path does not exist.')
                     continue
             else:
-                print(
-                    f"""The provided mediaItem is neither a recognized path nor a media object.
- mediaItem:{mediaItem}"""
-                    )
+                print(f"The provided mediaItem is neither a recognized path nor a media object.\n mediaItem:{mediaItem}")
                 continue
         if VideoFLAG or isVideo:
             if len(images) > frameNum:
@@ -310,18 +292,12 @@ class Chatbot:
         conv.append_message(conv.roles[0], text)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
-        input_ids = self.jamba_tokenizer_image_token(prompt, self.tokenizer,
-            IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device
-            )
+        input_ids = self.jamba_tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
         if self.images != [None]:
-            lenth = len(images)
-            image_tensors = self.jamba_process_images(self.images, self.
-                processor, self.model.config).to(self.device, dtype=paddle.
-                float16)
+            image_tensors = self.jamba_process_images(self.images, self.processor, self.model.config).to(self.device, dtype=paddle.float16)
         else:
             image_tensors = None
-        output_ids = self.model.generate(input_ids, images=image_tensors,
-            use_cache=True, **self.gen_kwargs)
+        output_ids = self.model.generate(input_ids, images=image_tensors, use_cache=True, **self.gen_kwargs)
         try:
             answer = self.tokenizer.decode(output_ids[0],
                 skip_special_tokens=True).strip()
@@ -342,8 +318,7 @@ class Chatbot:
         images: list[str], images for this round
         text: str
         """
-        return self.chat_with_jamba(text, images, isVideo, t, frameNum,
-            patchside_length, patchStrategy)
+        return self.chat_with_jamba(text, images, isVideo, t, frameNum, patchside_length, patchStrategy)
 
 
 if __name__ == '__main__':
@@ -351,17 +326,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Args of Data Preprocess')
     parser.add_argument('--model_dir', default='', type=str)
     parser.add_argument('--device', default='cuda:0', type=str)
-    parser.add_argument('--patchside_length', default=336, type=int, help=
-        'the length of the subImage for image patching')
-    parser.add_argument('--patchStrategy', type=str, default='norm', help=
-        'Strategy to apply for patching. Options include "norm", "bestFit". "Norm" means resize the Image, "bestFit" means patch the image into subImages with patchside_length*patchside_length'
-        )
-    parser.add_argument('--isVideo', default=False, type=str, help=
-        'whether the input is video')
-    parser.add_argument('--frameNum', default=128, type=int, help=
-        'the maximum of frame Number for Video')
-    parser.add_argument('--t', default=1.0, type=float, help=
-        'extract frame every t seconds for video')
+    parser.add_argument('--patchside_length', default=336, type=int)
+    parser.add_argument('--patchStrategy', type=str, default='norm')
+    parser.add_argument('--isVideo', default=False, type=str)
+    parser.add_argument('--frameNum', default=128, type=int)
+    parser.add_argument('--t', default=1.0, type=float)
     args = parser.parse_args()
     bot = Chatbot(args)
     while True:
@@ -373,10 +342,8 @@ if __name__ == '__main__':
         if text.lower() == 'clear':
             bot.clear_history()
             continue
-        answer = bot.chat(images=images, text=text, isVideo=args.isVideo, t
-            =args.t, frameNum=args.frameNum, patchside_length=args.
-            patchside_length, patchStrategy=args.patchStrategy)
+        answer = bot.chat(images=images, text=text, isVideo=args.isVideo, t=args.t, frameNum=args.frameNum, patchside_length=args.patchside_length, patchStrategy=args.patchStrategy)
         images = None
         print()
-        print(f'GPT: {answer}')
+        print(f'output: {answer}')
         print()
